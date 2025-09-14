@@ -9,6 +9,13 @@
 #include <sstream>
 #include <string>
 
+//to can use the enum from the .h file 
+DurationUnit parseUnit(const string& unit) {
+	if (unit == "day" || unit == "days") return DurationUnit::Days;
+	if (unit == "month" || unit == "months") return DurationUnit::Months;
+	if (unit == "year" || unit == "years") return DurationUnit::Years;
+	throw invalid_argument("Invalid time unit.");
+}
 
 
 // Getters
@@ -84,7 +91,13 @@ void Subscription:: purchase_Subscription() {
 
 			// first we will display all periods in this plan to make him choose one of them
 			int i = 0;
-			SubscriptionPlan& tempplan = MetroSystem::availablePlans[name];
+			auto it = MetroSystem::availablePlans.find(name);
+			if (it == MetroSystem::availablePlans.end()) {
+				cout << "Invalid plan name.\n";
+				continue;
+			}
+			SubscriptionPlan& tempplan = it->second; 
+
 			vector<Period>& v = tempplan.getPeriods();
 
 			for (auto& iter : v)
@@ -166,18 +179,19 @@ void Subscription:: purchase_Subscription() {
 				string unit = duration.substr(spacePos + 1);
 
 				// Calculate the end date
-				if (unit == "day" || unit == "days") {
-					startTm.tm_mday += num; // Add days
+				DurationUnit du = parseUnit(unit);
+				switch (du) {
+				case DurationUnit::Days:
+					startTm.tm_mday += num;
+					break;
+				case DurationUnit::Months:
+					startTm.tm_mon += num;
+					break;
+				case DurationUnit::Years:
+					startTm.tm_year += num;
+					break;
 				}
-				else if (unit == "month" || unit == "months") {
-					startTm.tm_mon += num; // Add months
-				}
-				else if (unit == "year" || unit == "years") {
-					startTm.tm_year += num; // Add years
-				}
-				else {
-					throw invalid_argument("Invalid time unit.");
-				}
+
 
 				// Normalize the tm structure (e.g., handle overflow of days/months)
 				mktime(&startTm);
@@ -279,18 +293,19 @@ void Subscription::renew_Subscription() {
 				string unit = duration.substr(spacePos + 1);
 
 				// Calculate the end date
-				if (unit == "day" || unit == "days") {
-					startTm.tm_mday += num; // Add days
+				DurationUnit du = parseUnit(unit);
+				switch (du) {
+				case DurationUnit::Days:
+					startTm.tm_mday += num;
+					break;
+				case DurationUnit::Months:
+					startTm.tm_mon += num;
+					break;
+				case DurationUnit::Years:
+					startTm.tm_year += num;
+					break;
 				}
-				else if (unit == "month" || unit == "months") {
-					startTm.tm_mon += num; // Add months
-				}
-				else if (unit == "year" || unit == "years") {
-					startTm.tm_year += num; // Add years
-				}
-				else {
-					throw invalid_argument("Invalid time unit.");
-				}
+
 
 				// Normalize the tm structure (e.g., handle overflow of days/months)
 				mktime(&startTm);
@@ -370,30 +385,39 @@ void Subscription::upgrade_Subscription(Subscription copy)
 			cc--;
 
 			//now checking about the plan name and the period name that they are not the same as the last current
-			if (v[cc].name == copy.choosen.name && copy.getType().name == name)
-			{
-				while (true)
-				{
+			bool validChoice = false;
+			while (!validChoice) {
+				cout << "Enter the name of plan you want to subscribe on it: \n";
+				cin >> name;
 
-
-					cout << "it is the same of the last subscription do you want to renew it?enter(y||n) \n";
-					char let;
-					cin >> let;
-					if (let == 'y' || let == 'Y')
-					{
-						renew_Subscription();
-						break;
-					}
-					else if (let == 'n' || let == 'N')
-					{
-						cout << "so choose again the plan you want to upgrade to it. \n";
-						upgrade_Subscription(copy);
-						break;
-					}
-					else
-						cout << "invalid choice. \n";
+				auto it = MetroSystem::availablePlans.find(name);
+				if (it == MetroSystem::availablePlans.end()) {
+					cout << "Invalid name, try again.\n";
+					continue;
 				}
+
+				SubscriptionPlan& tempplan = it->second;
+				vector<Period>& v = tempplan.getPeriods();
+
+				// let user choose period
+				...
+					if (v[cc].name == copy.choosen.name && copy.getType().name == name) {
+						cout << "Same as old subscription. Renew? (y/n)\n";
+						char let; cin >> let;
+						if (let == 'y' || let == 'Y') {
+							renew_Subscription();
+							validChoice = true;
+						}
+						else {
+							cout << "Choose again.\n";
+							continue; // re-ask instead of recursion
+						}
+					}
+					else {
+						validChoice = true;
+					}
 			}
+
 
 			// now checking is done we want to know now the number of trips
 			if (v[cc].getTotalTrips() <= copy.choosen.getTotalTrips())//it doesnot achieve the upgrade condition 
@@ -430,18 +454,19 @@ void Subscription::upgrade_Subscription(Subscription copy)
 					string unit = duration.substr(spacePos + 1);
 
 					// Calculate the end date
-					if (unit == "day" || unit == "days") {
-						startTm.tm_mday += num; // Add days
+					DurationUnit du = parseUnit(unit);
+					switch (du) {
+					case DurationUnit::Days:
+						startTm.tm_mday += num;
+						break;
+					case DurationUnit::Months:
+						startTm.tm_mon += num;
+						break;
+					case DurationUnit::Years:
+						startTm.tm_year += num;
+						break;
 					}
-					else if (unit == "month" || unit == "months") {
-						startTm.tm_mon += num; // Add months
-					}
-					else if (unit == "year" || unit == "years") {
-						startTm.tm_year += num; // Add years
-					}
-					else {
-						throw invalid_argument("Invalid time unit.");
-					}
+
 
 					// Normalize the tm structure (e.g., handle overflow of days/months)
 					mktime(&startTm);
@@ -466,64 +491,4 @@ void Subscription::upgrade_Subscription(Subscription copy)
 
 
 
-
-		//void Subscription::upgrade_Subscription()
-		//{    
-		//	// think more about if there will be any checks must making before allow to the user to upgrade qits plan 
-		//
-		//
-		//	if (active == false)// so the admin stop this subscription and thats mean he can upgrade
-		//	{
-		//		display_Subscription_Plans();
-		//		while (true) {
-		//			string name;
-		//			cout << "Enter the name of plan you want to upgrade to it . \n";
-		//			cin >> name;
-		//			auto it = metroSystem.availablePlans.find(name);
-		//			if (it == metroSystem.availablePlans.end())//it means the name is not existed 
-		//			{
-		//				cout << "It is invalid name please enter the exactrly name as shown. /n";
-		//				continue;
-		//			}
-		//			else  //it means the name is existed 
-		//			{
-		//				    type = it->second;
-		//				if (type.fixed) {
-		//					while (true) {
-		//						cout << "Enter in which stage you want your subscription \n";
-		//						char letter;
-		//						cin >> letter;
-		//						if (letter == '1')
-		//							price = type.amount_ForEachStage[0];
-		//						else if (letter == '2')
-		//							price = type.amount_ForEachStage[1];
-		//						else if (letter == '3')
-		//							price = type.amount_ForEachStage[2];
-		//						else if (letter == '4')
-		//							price = type.amount_ForEachStage[3];
-		//						else
-		//						{
-		//							cout << "Invalid stage number please try again \n";
-		//							continue;
-		//						}
-		//						break;
-		//					}
-		//				}
-		//				break;
-		//
-		//				// now we upgrade the type of the plan and the price so we will renew it 
-		//			}
-		//
-		//		}
-		//		cout << "Your subscription plan was upgraded successfully! ^^ \n";
-		//		renew_Subscription();
-		//	}
-		//
-		//	else
-		//	{
-		//		cout << "Your subscription is still active you can only upgrade after finishing the current subscription. \n";
-		//		return;
-		//	}
-		//}
-		////  EDIT RENEW , UPGRADE 
 
