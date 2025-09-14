@@ -4,6 +4,12 @@
 #include"SubscriptionPlan.h"
 #include"Period.h"
 using namespace std;
+#include <stdexcept>
+
+enum class DurationUnit { Days, Months, Years };
+
+DurationUnit parseUnit(const string& unit);
+
 
 // in the .h file i just put the declartions of the methods and the constructors and the defination in the .cpp file  
 
